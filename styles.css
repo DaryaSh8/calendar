@@ -61,3 +61,7 @@ textarea {
   max-height: 200px;
   max-width: 500px;
 }
+
+.has-note::after {
+  content: "*";
+}

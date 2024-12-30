@@ -2,6 +2,8 @@
 
 const daysOfWeek = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
+const notes = {};
+
 const months = [
   "Январь",
   "Февраль",
@@ -23,7 +25,16 @@ const dateNow = document.getElementById("date-now");
 const prevButton = document.getElementById("btn-prev-month");
 const nextButton = document.getElementById("btn-next-month");
 const dateInNote = document.getElementById("date-note");
-const saveButton = document.getElementById("btn-save-note");
+const saveNoteButton = document.getElementById("btn-save-note");
+const noteElement = document.getElementById("note");
+
+let chosenDate = new Date();
+
+chosenDate.setHours(0, 0, 0, 0);
+
+let nowDate = getDatesString(chosenDate);
+
+dateInNote.textContent = nowDate;
 
 const renderDaysOfWeek = (arr) => {
   for (const day of arr) {
@@ -36,28 +47,23 @@ const renderDaysOfWeek = (arr) => {
 
 renderDaysOfWeek(daysOfWeek);
 
-const now = new Date();
-let currentYear = now.getFullYear();
-let currentMonth = now.getMonth();
-let currentDate = now.getDate();
-
-let nowDate = getDatesString(currentDate, currentMonth, currentYear);
-dateInNote.textContent = nowDate;
-
-function getDatesString(d, m, y) {
-  return `${d}-${m + 1}-${y}`;
+function getDatesString(date) {
+  return date.toLocaleDateString();
 }
 
 function getLastDayOfMonth(year, month) {
-  let num = new Date(year, month + 1, 0).getDate();
-  return num;
+  return new Date(year, month + 1, 0).getDate();
 }
 
 function renderDaysOfMonth(day) {
   containerDaysOfMonth.textContent = "";
   const arrOfDays = [];
 
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const firstDayOfMonth = new Date(
+    chosenDate.getFullYear(),
+    chosenDate.getMonth(),
+    1,
+  ).getDay();
 
   const offsetDays = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
 
@@ -68,14 +74,23 @@ function renderDaysOfMonth(day) {
     arrOfDays.push(dayOfMonth);
   }
 
+  const date = new Date(chosenDate);
+
   for (let i = 1; i <= day; i++) {
     const dayOfMonth = document.createElement("div");
-    const date = getDatesString(i, currentMonth, currentYear);
 
-    if (nowDate === date) {
+    date.setDate(i);
+
+    const dateString = getDatesString(date);
+
+    if (nowDate === dateString) {
       dayOfMonth.classList.add("now-day");
     }
-    dayOfMonth.addEventListener("click", (e) => selectDay(e, date));
+
+    if (notes[dateString]) {
+      dayOfMonth.classList.add("has-note");
+    }
+    dayOfMonth.addEventListener("click", (e) => selectDay(e, dateString));
     dayOfMonth.textContent = i;
     arrOfDays.push(dayOfMonth);
   }
@@ -87,38 +102,66 @@ function selectDay(e, date) {
   document.querySelector(".current-day")?.classList.remove("current-day");
   e.target.classList.add("current-day");
 
+  noteElement.value = notes[date] || "";
   dateInNote.textContent = date;
+  chosenDate = new Date(date);
 }
 
-let lastDay = getLastDayOfMonth(currentYear, currentMonth);
+let lastDay = getLastDayOfMonth(
+  chosenDate.getFullYear(),
+  chosenDate.getMonth(),
+);
 renderDaysOfMonth(lastDay);
 
 function renderCurrentData() {
-  dateNow.textContent = months[currentMonth] + " " + currentYear;
+  dateNow.textContent =
+    months[chosenDate.getMonth()] + " " + chosenDate.getFullYear();
 }
 
 function prevDate() {
+  let currentYear = chosenDate.getFullYear();
+  let currentMonth = chosenDate.getMonth();
+
   if (currentMonth === 0) {
     currentYear--;
     currentMonth = 11;
   } else {
     currentMonth--;
   }
+
+  chosenDate.setFullYear(currentYear);
+  chosenDate.setMonth(currentMonth);
+
   renderCurrentData();
-  renderDaysOfMonth(getLastDayOfMonth(currentYear, currentMonth));
+  renderDaysOfMonth(getLastDayOfMonth(chosenDate.getFullYear(), currentMonth));
 }
 function nextDate() {
+  let currentYear = chosenDate.getFullYear();
+  let currentMonth = chosenDate.getMonth();
+
   if (currentMonth === 11) {
     currentYear++;
     currentMonth = 0;
   } else {
     currentMonth++;
   }
+
+  chosenDate.setFullYear(currentYear);
+  chosenDate.setMonth(currentMonth);
+
   renderCurrentData();
-  renderDaysOfMonth(getLastDayOfMonth(currentYear, currentMonth));
+  renderDaysOfMonth(getLastDayOfMonth(chosenDate.getFullYear(), currentMonth));
+}
+
+function saveNote(value) {
+  notes[getDatesString(chosenDate)] = value;
+  renderDaysOfMonth(
+    getLastDayOfMonth(chosenDate.getFullYear(), chosenDate.getMonth()),
+  );
 }
 
 prevButton.addEventListener("click", prevDate);
 nextButton.addEventListener("click", nextDate);
+saveNoteButton.addEventListener("click", () => saveNote(noteElement.value));
 
 renderCurrentData();
