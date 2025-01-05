@@ -2,7 +2,7 @@
 
 const daysOfWeek = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-const notes = {};
+const notes = JSON.parse(localStorage.getItem("notes") || "{}");
 
 const months = [
   "Январь",
@@ -48,7 +48,7 @@ const renderDaysOfWeek = (arr) => {
 renderDaysOfWeek(daysOfWeek);
 
 function getDatesString(date) {
-  return date.toLocaleDateString();
+  return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
 }
 
 function getLastDayOfMonth(year, month) {
@@ -74,10 +74,9 @@ function renderDaysOfMonth(day) {
     arrOfDays.push(dayOfMonth);
   }
 
-  const date = new Date(chosenDate);
-
   for (let i = 1; i <= day; i++) {
     const dayOfMonth = document.createElement("div");
+    const date = new Date(chosenDate);
 
     date.setDate(i);
 
@@ -90,7 +89,7 @@ function renderDaysOfMonth(day) {
     if (notes[dateString]) {
       dayOfMonth.classList.add("has-note");
     }
-    dayOfMonth.addEventListener("click", (e) => selectDay(e, dateString));
+    dayOfMonth.addEventListener("click", (e) => selectDay(e, date));
     dayOfMonth.textContent = i;
     arrOfDays.push(dayOfMonth);
   }
@@ -102,8 +101,11 @@ function selectDay(e, date) {
   document.querySelector(".current-day")?.classList.remove("current-day");
   e.target.classList.add("current-day");
 
-  noteElement.value = notes[date] || "";
-  dateInNote.textContent = date;
+  const dateStr = getDatesString(date);
+
+  noteElement.value = notes[dateStr] || "";
+  dateInNote.textContent = dateStr;
+
   chosenDate = new Date(date);
 }
 
@@ -119,42 +121,25 @@ function renderCurrentData() {
 }
 
 function prevDate() {
-  let currentYear = chosenDate.getFullYear();
-  let currentMonth = chosenDate.getMonth();
-
-  if (currentMonth === 0) {
-    currentYear--;
-    currentMonth = 11;
-  } else {
-    currentMonth--;
-  }
-
-  chosenDate.setFullYear(currentYear);
-  chosenDate.setMonth(currentMonth);
+  chosenDate.setMonth(chosenDate.getMonth() - 1);
 
   renderCurrentData();
-  renderDaysOfMonth(getLastDayOfMonth(chosenDate.getFullYear(), currentMonth));
+  renderDaysOfMonth(
+    getLastDayOfMonth(chosenDate.getFullYear(), chosenDate.getMonth()),
+  );
 }
 function nextDate() {
-  let currentYear = chosenDate.getFullYear();
-  let currentMonth = chosenDate.getMonth();
-
-  if (currentMonth === 11) {
-    currentYear++;
-    currentMonth = 0;
-  } else {
-    currentMonth++;
-  }
-
-  chosenDate.setFullYear(currentYear);
-  chosenDate.setMonth(currentMonth);
+  chosenDate.setMonth(chosenDate.getMonth() + 1);
 
   renderCurrentData();
-  renderDaysOfMonth(getLastDayOfMonth(chosenDate.getFullYear(), currentMonth));
+  renderDaysOfMonth(
+    getLastDayOfMonth(chosenDate.getFullYear(), chosenDate.getMonth()),
+  );
 }
 
 function saveNote(value) {
   notes[getDatesString(chosenDate)] = value;
+  localStorage.setItem("notes", JSON.stringify(notes));
   renderDaysOfMonth(
     getLastDayOfMonth(chosenDate.getFullYear(), chosenDate.getMonth()),
   );
