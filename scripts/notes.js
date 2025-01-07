@@ -1,9 +1,9 @@
 import { getDatesString } from "./utils.js";
 import { renderDays } from "./calendar.js";
-import { nowDate } from "./month-switcher.js";
 import { chosenDate } from "./state.js";
+import { api } from "./api/api.js";
 
-export const notes = JSON.parse(localStorage.getItem("notes") || "{}");
+export const notes = await api.getNotes().catch(() => ({}));
 const dateInNote = document.getElementById("date-note");
 const saveNoteButton = document.getElementById("btn-save-note");
 const noteElement = document.getElementById("note");
@@ -21,7 +21,7 @@ export function renderNotes() {
 
 export function saveNote(value) {
   notes[getDatesString(chosenDate)] = value;
-  localStorage.setItem("notes", JSON.stringify(notes));
+  api.saveNotes(notes);
 
   renderDays();
 }
