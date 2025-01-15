@@ -1,27 +1,49 @@
-import { getDatesString } from "./utils.js";
 import { renderDays } from "./calendar.js";
-import { chosenDate } from "./state.js";
 import { api } from "./api/api.js";
+import { chosenDateString, notes } from "./state.js";
+import { effect } from "./signals.js";
 
-export const notes = await api.getNotes().catch(() => ({}));
-const dateInNote = document.getElementById("date-note");
-const saveNoteButton = document.getElementById("btn-save-note");
-const noteElement = document.getElementById("note");
+const dateInNoteElement = document.getElementById("date-note");
+const saveNoteButtonElement = document.getElementById("btn-save-note");
+const noteElementElement = document.getElementById("note");
 
-renderNotes();
+let abortController = new AbortController();
 
-saveNoteButton.addEventListener("click", () => saveNote(noteElement.value));
+export function initNotes() {
+  abortController.abort();
+  abortController = new AbortController();
+
+  api
+    .getNotes()
+    .catch(() => ({}))
+    .then((r) => notes.set(r));
+
+  effect(() => {
+    renderNotes();
+  });
+
+  saveNoteButtonElement.addEventListener(
+    "click",
+    () => saveNote(noteElementElement.value),
+    {
+      signal: abortController.signal,
+    },
+  );
+}
 
 export function renderNotes() {
-  const dateStr = getDatesString(chosenDate);
+  const dateStr = chosenDateString();
 
-  noteElement.value = notes[dateStr] || "";
-  dateInNote.textContent = dateStr;
+  noteElementElement.value = notes()[dateStr] || "";
+  dateInNoteElement.textContent = dateStr;
 }
 
 export function saveNote(value) {
-  notes[getDatesString(chosenDate)] = value;
-  api.saveNotes(notes);
-
+  notes.set(notes());
+  notes.update((prevNotes) => {
+    prevNotes[chosenDateString()] = value;
+    return prevNotes;
+  });
+  api.saveNotes(notes());
   renderDays();
 }

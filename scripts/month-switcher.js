@@ -1,25 +1,38 @@
-import { getDatesString } from "./utils.js";
 import { renderDays } from "./calendar.js";
-import { chosenDate } from "./state.js";
 import { monthes } from "./constants.js";
+import { effect } from "./signals.js";
+import { chosenDate } from "./state.js";
 
-const dateNow = document.getElementById("date-now");
-const prevButton = document.getElementById("btn-prev-month");
-const nextButton = document.getElementById("btn-next-month");
+const dateNowElement = document.getElementById("date-now");
+const prevButtonElement = document.getElementById("btn-prev-month");
+const nextButtonElement = document.getElementById("btn-next-month");
 
-export const nowDate = getDatesString(chosenDate);
+let abortController = new AbortController();
 
-prevButton.addEventListener("click", () => setMonth(-1));
-nextButton.addEventListener("click", () => setMonth(1));
+export function initMonthSwitcher() {
+  abortController.abort();
+  abortController = new AbortController();
 
-export function renderCurrentData() {
-  dateNow.textContent =
-    monthes[chosenDate.getMonth()] + " " + chosenDate.getFullYear();
+  effect(() => {
+    const date = chosenDate();
+
+    dateNowElement.textContent =
+      monthes[date.getMonth()] + " " + date.getFullYear();
+  });
+
+  prevButtonElement.addEventListener("click", () => setMonth(-1), {
+    signal: abortController.signal,
+  });
+  nextButtonElement.addEventListener("click", () => setMonth(1), {
+    signal: abortController.signal,
+  });
 }
 
-export function setMonth(value) {
-  chosenDate.setMonth(chosenDate.getMonth() + value);
+function setMonth(value) {
+  const date = chosenDate();
 
-  renderCurrentData();
+  date.setMonth(date.getMonth() + value);
+  chosenDate.set(date);
+
   renderDays();
 }
