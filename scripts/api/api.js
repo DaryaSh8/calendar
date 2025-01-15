@@ -1,3 +1,5 @@
-import { ServerApi } from "./server-api.js";
+// import { ServerApi } from "./server-api.js";
 
-export const api = new ServerApi();
+import { LocaleStorageApi } from "./locale-storage-api.js";
+
+export const api = new LocaleStorageApi();
